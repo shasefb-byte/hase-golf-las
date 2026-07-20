@@ -1,12 +1,12 @@
 {
-  "name": "ゴルフ・ラスベガス by hase",
+  "name": "ゴルフ・ラスベガス",
   "short_name": "ラスベガス",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#f4f7f5",
-  "theme_color": "#12372a",
-  "description": "同点時は前ホール順位を優先し、1ホール目はA1→B1→B2→A2を基準に、次ホールを1位＋4位／2位＋3位で自動編成する版。",
+  "background_color": "#0b2e23",
+  "theme_color": "#0b2e23",
+  "description": "ラウンド履歴保存とプレミアムアイコン対応版",
   "icons": [
     {
       "src": "icon-192.png",

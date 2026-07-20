@@ -105,12 +105,22 @@
   font-weight:900;
   letter-spacing:.5px;
 }
+
+    .splash-logo{width:132px;height:132px;border-radius:30px;margin:0 auto 20px;box-shadow:0 14px 34px rgba(0,0,0,.34);border:1px solid rgba(216,168,50,.55);object-fit:cover;animation:splashFloat 1.3s ease-in-out infinite alternate}
+    .history-card{padding:14px;margin:10px 0;border:1px solid var(--line);border-radius:16px;background:white;box-shadow:var(--shadow)}
+    .history-title{font-size:17px;font-weight:900;margin-bottom:4px}
+    .history-meta{font-size:12px;color:var(--muted);margin-bottom:10px}
+    .history-player{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px dashed var(--line)}
+    .history-actions{display:flex;gap:8px;margin-top:10px}
+    .history-actions button{flex:1;min-height:42px}
+    .empty-history{text-align:center;padding:30px 12px;color:var(--muted)}
+
 </style>
 </head>
 <body>
 <div id="splash" class="splash" aria-label="起動画面">
   <div class="splash-inner">
-    <div class="splash-icon">⛳</div>
+    <img class="splash-logo" src="icon-512.png" alt="ゴルフ・ラスベガス">
     <div class="splash-title">ゴルフ・ラスベガス</div>
     <div class="splash-author">by hase</div>
     <div class="splash-loader"></div>
@@ -121,7 +131,7 @@
   <div class="top">
     <div class="title">
       <h1>⛳ ゴルフ・ラスベガス</h1>
-      <div style="display:flex;gap:6px;align-items:center"><span class="tiny">hase v25.4</span><div class="row"><span class="tiny"></span><span class="badge" id="holeBadge">1H</span></div></div>
+      <div style="display:flex;gap:6px;align-items:center"><span class="tiny">hase v25.5</span><div class="row"><span class="tiny"></span><span class="badge" id="holeBadge">1H</span></div></div>
     </div>
     <div class="holes" id="holes"></div>
   </div>
@@ -211,11 +221,29 @@
       <div id="payments"></div>
     </div>
     <div class="card">
-      <button class="ghost" id="shareBtn" style="width:100%">結果を共有</button>
+      <button class="primary" id="saveHistoryBtn" style="width:100%">このラウンドを履歴に保存</button>
+      <button class="ghost" id="shareBtn" style="width:100%;margin-top:8px">結果を共有</button>
     </div>
   </section>
 
+  <section id="historyView" class="hidden">
+    <div class="card">
+      <div class="row between">
+        <h2 style="margin:0">ラウンド履歴</h2>
+        <button class="danger" id="clearHistoryBtn" style="min-height:40px;padding:7px 10px">全削除</button>
+      </div>
+      <div class="tiny" style="margin-top:6px">このiPhone内に保存されます。</div>
+    </div>
+    <div id="historyList"></div>
+  </section>
+
   <section id="settingsView" class="hidden">
+    <div class="card">
+      <h2>ラウンド情報</h2>
+      <label>ゴルフ場・ラウンド名</label>
+      <input id="courseName" placeholder="例：岐阜関カントリー倶楽部">
+      <div class="tiny" style="margin-top:6px">履歴に保存される名前です。</div>
+    </div>
     <div class="card">
       <h2>プレイヤー</h2>
       <div class="grid2">
@@ -261,6 +289,7 @@
 <div class="nav">
   <button class="primary" data-view="play">スコア</button>
   <button class="secondary" data-view="summary">精算</button>
+  <button class="secondary" data-view="history">履歴</button>
   <button class="secondary" data-view="settings">設定</button>
 </div>
 
@@ -272,11 +301,13 @@ window.setTimeout(()=>splash&&splash.classList.add("hide"),splashDelay);
 
 const defaults = {
   players:["プレイヤーA","プレイヤーB","プレイヤーC","プレイヤーD"],
-  settings:{reverse:true,rate:50,cap:999,birdie:1,eagle:2,albatross:4,round10:true,autoRankTeams:true,tieCarry:true,startSide:"OUT"},
+  settings:{reverse:true,rate:50,cap:999,birdie:1,eagle:2,albatross:4,round10:true,autoRankTeams:true,tieCarry:true,startSide:"OUT",courseName:""},
   holes:Array.from({length:18},(_,i)=>({hole:i+1,par:4,teams:[0,1,2,3],scores:[4,4,4,4],options:{nearPin:"",dragon:"",sand:"",rod:""},naki:1,saved:false}))
 };
 let state = JSON.parse(localStorage.getItem("lvGolf")||"null") || JSON.parse(JSON.stringify(defaults));
 let current = Number(localStorage.getItem("lvHole")||0);
+let history = JSON.parse(localStorage.getItem("lvGolfHistory")||"[]");
+if(!Array.isArray(history))history=[];
 
 // Migrate data saved by older versions before the first calculation.
 state.settings=Object.assign({},defaults.settings,state.settings||{});
@@ -296,6 +327,7 @@ state.holes.forEach((h,i)=>{
 if(!Number.isInteger(current)||current<0||current>17)current=0;
 
 function persist(){localStorage.setItem("lvGolf",JSON.stringify(state));localStorage.setItem("lvHole",current)}
+function persistHistory(){localStorage.setItem("lvGolfHistory",JSON.stringify(history))}
 function displayHoleNumber(index){
   return state.settings.startSide==="IN" ? ((index+9)%18)+1 : index+1;
 }
@@ -516,16 +548,62 @@ function renderSummary(){
   $("payments").innerHTML=lines.length?lines.map(x=>`<div class="payline">${x}</div>`).join(""):'<div class="tiny">まだ精算データがありません。</div>';
   return {points,lines};
 }
+
+function createHistoryRecord(){
+  const summary=renderSummary();
+  return {
+    id:Date.now(),
+    savedAt:new Date().toISOString(),
+    courseName:(state.settings.courseName||"名称未設定").trim()||"名称未設定",
+    players:[...state.players],
+    points:[...summary.points],
+    rate:Number(state.settings.rate),
+    savedHoles:state.holes.filter(h=>h.saved).length
+  };
+}
+function saveRoundHistory(showMessage=true){
+  if(state.holes.filter(h=>h.saved).length===0){if(showMessage)alert("保存済みのホールがありません");return false}
+  history.unshift(createHistoryRecord());
+  persistHistory();renderHistory();
+  if(showMessage)alert("ラウンド履歴を保存しました");
+  return true;
+}
+function formatHistoryDate(value){
+  const d=new Date(value);
+  return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+}
+function renderHistory(){
+  const list=$("historyList");if(!list)return;
+  if(!history.length){list.innerHTML='<div class="card empty-history">まだ履歴はありません。<br>精算画面から保存できます。</div>';return}
+  list.innerHTML=history.map(rec=>{
+    const rows=rec.players.map((p,i)=>{
+      const money=Number(rec.points[i]||0)*Number(rec.rate||0);
+      return `<div class="history-player"><span>${p}</span><b class="${money>0?"pos":money<0?"neg":""}">${money>0?"+":""}${money.toLocaleString()}円</b></div>`;
+    }).join("");
+    return `<div class="history-card"><div class="history-title">${rec.courseName}</div><div class="history-meta">${formatHistoryDate(rec.savedAt)}・${rec.savedHoles||0}ホール・1点${Number(rec.rate||0).toLocaleString()}円</div>${rows}<div class="history-actions"><button class="ghost" onclick="shareHistory(${rec.id})">共有</button><button class="danger" onclick="deleteHistory(${rec.id})">削除</button></div></div>`;
+  }).join("");
+}
+window.deleteHistory=function(id){
+  if(!confirm("この履歴を削除しますか？"))return;
+  history=history.filter(x=>x.id!==id);persistHistory();renderHistory();
+};
+window.shareHistory=async function(id){
+  const rec=history.find(x=>x.id===id);if(!rec)return;
+  const lines=rec.players.map((p,i)=>{const money=Number(rec.points[i]||0)*Number(rec.rate||0);return `${p}: ${money>0?"+":""}${money.toLocaleString()}円`;});
+  const text=[rec.courseName,formatHistoryDate(rec.savedAt),...lines].join("\n");
+  try{if(navigator.share)await navigator.share({title:"ゴルフ・ラスベガス履歴",text});else{await navigator.clipboard.writeText(text);alert("履歴をコピーしました")}}catch(e){}
+};
 function renderSettings(){
+  if($("courseName"))$("courseName").value=state.settings.courseName||"";
   state.players.forEach((p,i)=>$("p"+(i+1)).value=p);
   Object.entries(state.settings).forEach(([k,v])=>{if($(k))$(k).type==="checkbox"?$(k).checked=v:$(k).value=v});
   if($("startSide"))$("startSide").value=state.settings.startSide||"OUT";
 }
-function renderAll(){renderHoles();loadCurrent();renderSummary();renderSettings();persist()}
+function renderAll(){renderHoles();loadCurrent();renderSummary();renderSettings();renderHistory();persist()}
 function showView(v){
-  ["play","summary","settings"].forEach(x=>$(x+"View").classList.toggle("hidden",x!==v));
+  ["play","summary","history","settings"].forEach(x=>$(x+"View").classList.toggle("hidden",x!==v));
   document.querySelectorAll(".nav button").forEach(b=>{b.className=b.dataset.view===v?"primary":"secondary"});
-  if(v==="summary")renderSummary(); if(v==="settings")renderSettings();
+  if(v==="summary")renderSummary(); if(v==="history")renderHistory(); if(v==="settings")renderSettings();
 }
 document.querySelectorAll("input,select").forEach(el=>el.addEventListener("input",()=>{if(!["p1","p2","p3","p4","rate","cap","birdie","eagle","albatross","reverse"].includes(el.id))updateCalc()}));
 ["nearPin","dragon","sand","rod"].forEach(id=>{
@@ -548,19 +626,22 @@ $("nextBtn").onclick=()=>{if(!saveCurrent(true))return;applyRankTeamsToNextHole(
 $("prevBtn").onclick=()=>{saveCurrent(false);if(current>0)current--;renderAll()};
 $("saveSettings").onclick=()=>{
   state.players=[1,2,3,4].map(i=>$("p"+i).value.trim()||`プレイヤー${i}`);
-  state.settings={reverse:$("reverse").checked,rate:Number($("rate").value||100),cap:Number($("cap").value||999),birdie:Number($("birdie").value||2),eagle:Number($("eagle").value||4),albatross:Number($("albatross").value||8),round10:$("round10").checked,autoRankTeams:$("autoRankTeams").checked,tieCarry:$("tieCarry").checked,startSide:$("startSide").value};
+  state.settings={reverse:$("reverse").checked,rate:Number($("rate").value||50),cap:Number($("cap").value||999),birdie:Number($("birdie").value||1),eagle:Number($("eagle").value||2),albatross:Number($("albatross").value||4),round10:$("round10").checked,autoRankTeams:$("autoRankTeams").checked,tieCarry:$("tieCarry").checked,startSide:$("startSide").value,courseName:$("courseName").value.trim()};
   persist();renderAll();showView("play");alert("設定を保存しました");
 };
-$("resetBtn").onclick=()=>{if(confirm("ラウンドデータをすべて消しますか？")){
-  localStorage.removeItem("lvGolf");
-  localStorage.removeItem("lvHole");
+$("resetBtn").onclick=()=>{
+  const savedCount=state.holes.filter(h=>h.saved).length;
+  if(!confirm("新しいラウンドを開始しますか？現在の入力内容はリセットされます。"))return;
+  if(savedCount>0 && confirm("現在のラウンドを履歴に保存しますか？"))saveRoundHistory(false);
+  const keepSettings=JSON.parse(JSON.stringify(state.settings));
+  const keepPlayers=[...state.players];
   state=JSON.parse(JSON.stringify(defaults));
-  current=0;
-  persist();
-  renderAll();
-  showView("play");
-  alert("ラウンドデータをリセットしました");
-}};
+  state.settings=Object.assign({},state.settings,keepSettings);
+  state.players=keepPlayers;
+  current=0;persist();renderAll();showView("play");alert("新しいラウンドを開始しました");
+};
+$("saveHistoryBtn").onclick=()=>saveRoundHistory(true);
+$("clearHistoryBtn").onclick=()=>{if(history.length&&confirm("すべてのラウンド履歴を削除しますか？")){history=[];persistHistory();renderHistory();}};
 $("shareBtn").onclick=async()=>{
   const {points,lines}=renderSummary();
   const text=["ゴルフ・ラスベガス結果",...state.players.map((p,i)=>`${p}: ${(points[i]*state.settings.rate).toLocaleString()}円`),"",...lines].join("\n");
