@@ -1,0 +1,22 @@
+{
+  "name": "ゴルフ・ラスベガス",
+  "short_name": "ラスベガス",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0b2e23",
+  "theme_color": "#0b2e23",
+  "description": "ラウンド履歴保存とプレミアムアイコン対応版",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -1,0 +1,656 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+  <meta name="theme-color" content="#12372a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="ラスベガス" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  
+  <title>ゴルフ・ラスベガス</title>
+  <style>
+    :root{
+      --bg:#f4f7f5; --card:#fff; --ink:#13231b; --muted:#6d7f75;
+      --green:#12372a; --green2:#2f6b4f; --line:#d9e3dd; --gold:#d8a832;
+      --red:#b93a3a; --blue:#285fa8; --shadow:0 8px 24px rgba(18,55,42,.10);
+    }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif}
+    button,input,select{font:inherit}
+    .app{max-width:680px;margin:auto;height:100dvh;display:flex;flex-direction:column;overflow:hidden;padding:0 14px;background:var(--bg)}
+    .top{position:sticky;top:0;z-index:20;background:rgba(244,247,245,.97);backdrop-filter:blur(12px);padding:calc(env(safe-area-inset-top) + 10px) 0 10px;border-bottom:1px solid var(--line);flex:0 0 auto}
+    .title{display:flex;justify-content:space-between;align-items:center}
+    .title h1{font-size:22px;margin:0}
+    .badge{background:var(--green);color:white;padding:7px 10px;border-radius:999px;font-weight:700;font-size:13px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:var(--shadow);margin:8px 0}
+    .row{display:flex;gap:10px;align-items:center}
+    .between{justify-content:space-between}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+    label{font-size:12px;color:var(--muted);font-weight:700}
+    input,select{width:100%;border:1px solid var(--line);background:white;border-radius:12px;padding:12px;min-height:46px}
+    input[type=number]{font-size:22px;font-weight:800;text-align:center}
+    button{border:0;border-radius:14px;min-height:48px;padding:10px 14px;font-weight:800}
+    .primary{background:var(--green);color:white}
+    .secondary{background:#e7efe9;color:var(--green)}
+    .danger{background:#fdeaea;color:var(--red)}
+    .ghost{background:white;border:1px solid var(--line)}
+    .scorebox{padding:12px;border-radius:16px;border:2px solid var(--line);background:white}
+    .teamA{border-color:#b9cee8}
+    .teamB{border-color:#efc7c7}
+    .teamhead{font-weight:900;margin-bottom:8px}
+    .result{font-size:30px;font-weight:900;text-align:center;margin:4px 0}
+    .sub{text-align:center;color:var(--muted);font-size:13px}
+    .money{font-size:24px;font-weight:900;text-align:center}
+    .pos{color:var(--blue)} .neg{color:var(--red)}
+    .seg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .seg button.active{background:var(--green);color:white}
+    .holes{display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;padding:6px 0 4px;scrollbar-width:none;scroll-snap-type:x proximity}
+    .holes button{min-width:44px;height:44px;padding:0;border-radius:12px;background:#e9efeb;color:var(--green);scroll-snap-align:center}
+    .holes button.active{background:var(--green);color:white}
+    .holes button.done{outline:2px solid var(--gold)}
+    .summary-row{display:grid;grid-template-columns:1.2fr .8fr .8fr;gap:8px;padding:11px 0;border-bottom:1px solid var(--line);align-items:center}
+    .payline{padding:10px 0;border-bottom:1px dashed var(--line)}
+    .nav{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:min(680px,100%);background:rgba(255,255,255,.98);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:8px 14px calc(env(safe-area-inset-bottom) + 8px);display:flex;gap:8px;z-index:30}
+    .nav button{flex:1}
+    #playView{padding-bottom:20px}
+    
+    .content-scroll{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:6px 0 calc(env(safe-area-inset-bottom) + 205px)}
+
+    .hidden{display:none!important}
+    .tiny{font-size:12px;color:var(--muted)}
+    .toggle{display:flex;align-items:center;justify-content:space-between;padding:8px 0}
+    .toggle input{width:24px;height:24px}
+    .note{background:#fff8e5;border:1px solid #efd487;border-radius:12px;padding:10px;font-size:13px}
+    .option-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .option-item{background:#f8faf9;border:1px solid var(--line);border-radius:14px;padding:10px}
+    .option-item select{margin-top:6px}
+    .naki-box{display:flex;align-items:center;justify-content:space-between;background:#fff3f3;border:1px solid #efb7b7;border-radius:14px;padding:12px;margin-top:10px}
+    .naki-box select{width:150px;min-height:48px;font-size:20px;font-weight:800;text-align:center;background:white;border:1px solid var(--line);border-radius:12px;padding:8px}
+
+    .result-card{margin-top:4px!important}
+    .action-card{
+      position:fixed;
+      left:50%;
+      transform:translateX(-50%);
+      bottom:calc(env(safe-area-inset-bottom) + 82px);
+      width:min(652px,calc(100% - 28px));
+      margin:0!important;
+      z-index:29;
+      box-shadow:0 8px 24px rgba(18,55,42,.18);
+    }
+
+
+    .splash{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:linear-gradient(160deg,#12372a 0%,#1e5941 100%);color:white;transition:opacity .45s ease,visibility .45s ease}
+    .splash.hide{opacity:0;visibility:hidden;pointer-events:none}
+    .splash-inner{text-align:center;padding:28px}
+    .splash-icon{font-size:76px;line-height:1;margin-bottom:18px;animation:splashFloat 1.3s ease-in-out infinite alternate}
+    .splash-title{font-size:30px;font-weight:900;letter-spacing:.02em}
+    .splash-author{margin-top:10px;font-size:17px;font-weight:700;opacity:.82}
+    .splash-loader{width:54px;height:5px;margin:28px auto 0;border-radius:999px;background:rgba(255,255,255,.25);overflow:hidden}
+    .splash-loader::after{content:"";display:block;width:50%;height:100%;border-radius:999px;background:#d8a832;animation:splashLoad 1.1s ease-in-out infinite}
+    @keyframes splashFloat{from{transform:translateY(0)}to{transform:translateY(-8px)}}
+    @keyframes splashLoad{0%{transform:translateX(-110%)}100%{transform:translateX(220%)}}
+
+    @media (max-width:380px){.grid4{grid-template-columns:1fr 1fr}.title h1{font-size:19px}}
+  
+.holes button .hole-seq{display:block;font-size:15px;font-weight:800;line-height:1}
+.holes button .hole-actual{display:block;font-size:9px;line-height:1.15;margin-top:3px;opacity:.78}
+
+#holeNo{
+  text-align:center;
+  font-size:28px;
+  font-weight:900;
+  letter-spacing:.5px;
+}
+
+    .splash-logo{width:132px;height:132px;border-radius:30px;margin:0 auto 20px;box-shadow:0 14px 34px rgba(0,0,0,.34);border:1px solid rgba(216,168,50,.55);object-fit:cover;animation:splashFloat 1.3s ease-in-out infinite alternate}
+    .history-card{padding:14px;margin:10px 0;border:1px solid var(--line);border-radius:16px;background:white;box-shadow:var(--shadow)}
+    .history-title{font-size:17px;font-weight:900;margin-bottom:4px}
+    .history-meta{font-size:12px;color:var(--muted);margin-bottom:10px}
+    .history-player{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px dashed var(--line)}
+    .history-actions{display:flex;gap:8px;margin-top:10px}
+    .history-actions button{flex:1;min-height:42px}
+    .empty-history{text-align:center;padding:30px 12px;color:var(--muted)}
+
+</style>
+</head>
+<body>
+<div id="splash" class="splash" aria-label="起動画面">
+  <div class="splash-inner">
+    <img class="splash-logo" src="icon-512.png" alt="ゴルフ・ラスベガス">
+    <div class="splash-title">ゴルフ・ラスベガス</div>
+    <div class="splash-author">by hase</div>
+    <div class="splash-loader"></div>
+  </div>
+</div>
+
+<div class="app">
+  <div class="top">
+    <div class="title">
+      <h1>⛳ ゴルフ・ラスベガス</h1>
+      <div style="display:flex;gap:6px;align-items:center"><span class="tiny">hase v25.5</span><div class="row"><span class="tiny"></span><span class="badge" id="holeBadge">1H</span></div></div>
+    </div>
+    <div class="holes" id="holes"></div>
+  </div>
+
+  <main class="content-scroll">
+  <section id="playView">
+    <div class="card">
+      <div class="grid2">
+        <div>
+          <label>ホール</label>
+          <input id="holeNo" type="text" readonly>
+        </div>
+        <div><label>PAR</label><select id="par"><option>3</option><option selected>4</option><option>5</option></select></div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="scorebox teamA">
+        <div class="teamhead">Aチーム</div>
+        <label>プレイヤー1</label><select id="a1"></select>
+        <label>スコア</label><select id="s1"></select>
+        <label>プレイヤー2</label><select id="a2"></select>
+        <label>スコア</label><select id="s2"></select>
+      </div>
+      <div class="scorebox teamB">
+        <div class="teamhead">Bチーム</div>
+        <label>プレイヤー1</label><select id="b1"></select>
+        <label>スコア</label><select id="s3"></select>
+        <label>プレイヤー2</label><select id="b2"></select>
+        <label>スコア</label><select id="s4"></select>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0">ホールオプション</h2><div class="tiny" style="margin-bottom:10px">スコアは1〜19から選択。10打以上は計算上9打として扱います。</div>
+      <div class="option-grid">
+        <div class="option-item"><label>ニアピン（10点）</label>
+          <select id="nearPin"><option value="">なし</option><option value="A">Aチーム</option><option value="B">Bチーム</option></select>
+        </div>
+        <div class="option-item"><label>ドラゴン（10点）</label>
+          <select id="dragon"><option value="">なし</option><option value="A">Aチーム</option><option value="B">Bチーム</option></select>
+        </div>
+        <div class="option-item"><label>砂イチ（10点）</label>
+          <select id="sand"><option value="">なし</option><option value="A">Aチーム</option><option value="B">Bチーム</option></select>
+        </div>
+        <div class="option-item"><label>竿（10点）</label>
+          <select id="rod"><option value="">なし</option><option value="A">Aチーム</option><option value="B">Bチーム</option></select>
+        </div>
+      </div>
+      <div class="naki-box">
+        <div>
+          <b>鳴き</b>
+          <div class="tiny">このホール全体の倍率</div>
+        </div>
+        <select id="naki" aria-label="鳴き倍率">
+          <option value="1">なし</option>
+          <option value="2">2倍</option>
+          <option value="4">4倍</option>
+          <option value="6">6倍</option>
+          <option value="8">8倍</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="card result-card">
+      <div class="result" id="resultText">A 44 ｜ B 44</div>
+      <div class="sub" id="ruleText">引き分け</div>
+      <div class="money" id="moneyText">0円</div>
+    </div>
+
+    <div class="card action-card">
+      <div class="seg">
+        <button class="secondary" id="prevBtn">◀ 前のホール</button>
+        <button class="primary" id="nextBtn">保存して次へ ▶</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="summaryView" class="hidden">
+    <div class="card">
+      <h2>最終結果</h2>
+      <div class="summary-row"><b>プレイヤー</b><b>点数</b><b>金額</b></div>
+      <div id="summaryList"></div>
+    </div>
+    <div class="card">
+      <h2>誰が誰に払うか</h2>
+      <div id="payments"></div>
+    </div>
+    <div class="card">
+      <button class="primary" id="saveHistoryBtn" style="width:100%">このラウンドを履歴に保存</button>
+      <button class="ghost" id="shareBtn" style="width:100%;margin-top:8px">結果を共有</button>
+    </div>
+  </section>
+
+  <section id="historyView" class="hidden">
+    <div class="card">
+      <div class="row between">
+        <h2 style="margin:0">ラウンド履歴</h2>
+        <button class="danger" id="clearHistoryBtn" style="min-height:40px;padding:7px 10px">全削除</button>
+      </div>
+      <div class="tiny" style="margin-top:6px">このiPhone内に保存されます。</div>
+    </div>
+    <div id="historyList"></div>
+  </section>
+
+  <section id="settingsView" class="hidden">
+    <div class="card">
+      <h2>ラウンド情報</h2>
+      <label>ゴルフ場・ラウンド名</label>
+      <input id="courseName" placeholder="例：岐阜関カントリー倶楽部">
+      <div class="tiny" style="margin-top:6px">履歴に保存される名前です。</div>
+    </div>
+    <div class="card">
+      <h2>プレイヤー</h2>
+      <div class="grid2">
+        <input id="p1" value="プレイヤーA"><input id="p2" value="プレイヤーB">
+        <input id="p3" value="プレイヤーC"><input id="p4" value="プレイヤーD">
+      </div>
+    </div>
+    <div class="card">
+      <h2>ルール設定</h2>
+      <div style="margin-bottom:12px">
+        <label>スタート表示</label>
+        <select id="startSide">
+          <option value="OUT">OUTスタート</option>
+          <option value="IN">INスタート</option>
+        </select>
+        <div class="tiny" style="margin-top:6px">計算や進行順はそのままで、実際のホール表示だけ切り替わります。</div>
+      </div>
+      <div class="toggle"><span>バーディー裏返し</span><input id="reverse" type="checkbox" checked></div>
+<div class="toggle"><span>10点単位に切り上げ</span><input id="round10" type="checkbox" checked></div>
+<div class="toggle"><span>次ホールを1位＋4位／2位＋3位で自動編成</span><input id="autoRankTeams" type="checkbox" checked></div>
+<div class="tiny" style="margin:-2px 0 8px">同点時は前ホールの順位を優先します。1ホール目は Aチーム1 → Bチーム1 → Bチーム2 → Aチーム2 の順です。</div>
+<div class="toggle"><span>引き分けを次ホールへ倍付けで持ち越す</span><input id="tieCarry" type="checkbox" checked></div>
+      <div class="grid2">
+        <div><label>1点単価（円）</label><input id="rate" type="number" inputmode="numeric" value="50"></div>
+        <div><label>最大点差</label><input id="cap" type="number" inputmode="numeric" value="999"></div>
+        <div><label>バーディー倍率</label><input id="birdie" type="number" value="1"></div>
+        <div><label>イーグル倍率</label><input id="eagle" type="number" value="2"></div>
+        <div><label>アルバトロス倍率</label><input id="albatross" type="number" value="4"></div>
+      </div>
+      <div class="note" style="margin-top:10px">相手チームにバーディー以上が出た場合、こちらの2桁の数字を逆順にします。</div>
+      <div class="note" style="margin-top:10px">
+        計算順：素の点差 → 10点単位切り上げ → バーディー等倍率 → 持越し倍率 → 鳴き倍率 → オプション加算
+      </div>
+    </div>
+    <div class="card">
+      <button class="primary" id="saveSettings" style="width:100%">設定を保存</button>
+      <button class="danger" id="resetBtn" style="width:100%;margin-top:8px">ラウンドをリセット</button>
+    </div>
+  </section>
+  </main>
+</div>
+
+<div class="nav">
+  <button class="primary" data-view="play">スコア</button>
+  <button class="secondary" data-view="summary">精算</button>
+  <button class="secondary" data-view="history">履歴</button>
+  <button class="secondary" data-view="settings">設定</button>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const splash=document.getElementById("splash");
+const splashDelay=window.matchMedia("(prefers-reduced-motion: reduce)").matches?150:1400;
+window.setTimeout(()=>splash&&splash.classList.add("hide"),splashDelay);
+
+const defaults = {
+  players:["プレイヤーA","プレイヤーB","プレイヤーC","プレイヤーD"],
+  settings:{reverse:true,rate:50,cap:999,birdie:1,eagle:2,albatross:4,round10:true,autoRankTeams:true,tieCarry:true,startSide:"OUT",courseName:""},
+  holes:Array.from({length:18},(_,i)=>({hole:i+1,par:4,teams:[0,1,2,3],scores:[4,4,4,4],options:{nearPin:"",dragon:"",sand:"",rod:""},naki:1,saved:false}))
+};
+let state = JSON.parse(localStorage.getItem("lvGolf")||"null") || JSON.parse(JSON.stringify(defaults));
+let current = Number(localStorage.getItem("lvHole")||0);
+let history = JSON.parse(localStorage.getItem("lvGolfHistory")||"[]");
+if(!Array.isArray(history))history=[];
+
+// Migrate data saved by older versions before the first calculation.
+state.settings=Object.assign({},defaults.settings,state.settings||{});
+if(!Array.isArray(state.players)||state.players.length!==4)state.players=[...defaults.players];
+if(!Array.isArray(state.holes)||state.holes.length!==18)state.holes=JSON.parse(JSON.stringify(defaults.holes));
+state.holes.forEach((h,i)=>{
+  if(h.par===undefined)h.par=4;
+  if(!Array.isArray(h.teams)||h.teams.length!==4)h.teams=[0,1,2,3];
+  if(!Array.isArray(h.scores)||h.scores.length!==4)h.scores=[h.par,h.par,h.par,h.par];
+  if(!h.options)h.options={nearPin:"",dragon:"",sand:"",rod:""};
+  if(h.naki===undefined)h.naki=1;
+  else if(h.naki===true)h.naki=2;
+  else if(h.naki===false)h.naki=1;
+  if(h.saved===undefined)h.saved=false;
+  h.hole=i+1;
+});
+if(!Number.isInteger(current)||current<0||current>17)current=0;
+
+function persist(){localStorage.setItem("lvGolf",JSON.stringify(state));localStorage.setItem("lvHole",current)}
+function persistHistory(){localStorage.setItem("lvGolfHistory",JSON.stringify(history))}
+function displayHoleNumber(index){
+  return state.settings.startSide==="IN" ? ((index+9)%18)+1 : index+1;
+}
+function calcBase(h){
+  const [x1,x2,y1,y2]=h.scores.map(v=>Math.min(Number(v),9)), par=Number(h.par);
+  const aNormal=Math.min(x1,x2)*10+Math.max(x1,x2);
+  const bNormal=Math.min(y1,y2)*10+Math.max(y1,y2);
+  const aBird=Math.min(x1,x2)<par, bBird=Math.min(y1,y2)<par;
+  const aFinal=state.settings.reverse&&bBird?Math.max(x1,x2)*10+Math.min(x1,x2):aNormal;
+  const bFinal=state.settings.reverse&&aBird?Math.max(y1,y2)*10+Math.min(y1,y2):bNormal;
+
+  const best=Math.min(x1,x2,y1,y2);
+  let scoreMult=1;
+  if(best<=par-3) scoreMult=state.settings.albatross;
+  else if(best===par-2) scoreMult=state.settings.eagle;
+  else if(best===par-1) scoreMult=state.settings.birdie;
+
+  // Correct order:
+  // 1) Base difference  2) Round up to 10 points  3) Apply birdie/eagle multiplier
+  let baseDiff=bFinal-aFinal;
+  if(state.settings.round10 && baseDiff!==0){
+    baseDiff=(baseDiff>0?Math.ceil(baseDiff/10):-Math.ceil(Math.abs(baseDiff)/10))*10;
+  }
+  let rawDiff=baseDiff*scoreMult;
+  rawDiff=Math.max(-state.settings.cap,Math.min(state.settings.cap,rawDiff));
+
+  return {aFinal,bFinal,baseDiff,rawDiff,scoreMult,aBird,bBird};
+}
+function carryMultiplier(index){
+  if(!state.settings.tieCarry || index<=0) return 1;
+
+  let nextCarry=1;
+  for(let i=0;i<index;i++){
+    const h=state.holes[i];
+    if(!h.saved){
+      nextCarry=1;
+      continue;
+    }
+
+    const b=calcBase(h);
+    const selectedNaki=Number(h.naki);
+    const nakiMult=[1,2,4,6,8].includes(selectedNaki)?selectedNaki:1;
+    const completeResult=b.rawDiff*nextCarry*nakiMult+optionDiff(h);
+
+    // Only a completely tied final result carries to the next hole.
+    nextCarry=completeResult===0?nextCarry+1:1;
+  }
+  return nextCarry;
+}
+function optionDiff(h){
+  let d=0;
+  Object.values(h.options||{}).forEach(v=>{if(v==="A")d+=10;else if(v==="B")d-=10;});
+  return d;
+}
+function calc(h,index=current){
+  const b=calcBase(h);
+  const carryMult=carryMultiplier(index);
+  const selectedNaki=Number(h.naki);
+  const nakiMult=[1,2,4,6,8].includes(selectedNaki)?selectedNaki:1;
+  const optDiff=optionDiff(h);
+
+  const multiplied=b.rawDiff*carryMult*nakiMult;
+  let diff=multiplied+optDiff;
+  diff=Math.max(-state.settings.cap,Math.min(state.settings.cap,diff));
+
+  return {
+    aFinal:b.aFinal,
+    bFinal:b.bFinal,
+    baseDiff:b.baseDiff,
+    scoreMult:b.scoreMult,
+    scoreAdjusted:b.rawDiff,
+    carryMult,
+    nakiMult,
+    multiplied,
+    optionDiff:optDiff,
+    diff,
+    money:diff*state.settings.rate,
+    aBird:b.aBird,
+    bBird:b.bBird
+  };
+}
+
+function initialRankOrder(){
+  // 1ホール目の同点時の基準順位：
+  // 1位=Aチーム1、2位=Bチーム1、3位=Bチーム2、4位=Aチーム2
+  const t=state.holes[0].teams;
+  return [t[0],t[2],t[3],t[1]];
+}
+
+function rankOrderForHole(index){
+  const h=state.holes[index];
+  const vals=h.scores.map(v=>Math.min(Number(v),9));
+
+  // 同点時は前ホール順位を優先。
+  // 1ホール目だけは A1 → B1 → B2 → A2 を基準にする。
+  const previousOrder=index===0 ? initialRankOrder() : rankOrderForHole(index-1);
+  const previousPosition=new Map(previousOrder.map((playerId,pos)=>[playerId,pos]));
+
+  return h.teams.map((playerId,screenOrder)=>({
+    playerId,
+    score:vals[screenOrder],
+    previousPos:previousPosition.has(playerId)?previousPosition.get(playerId):99,
+    screenOrder
+  })).sort((a,b)=>
+    a.score-b.score ||
+    a.previousPos-b.previousPos ||
+    a.screenOrder-b.screenOrder
+  ).map(x=>x.playerId);
+}
+
+function applyRankTeamsToNextHole(fromIndex){
+  if(!state.settings.autoRankTeams || fromIndex>=17) return;
+
+  const next=state.holes[fromIndex+1];
+  const ranked=rankOrderForHole(fromIndex);
+
+  // 次ホールは必ず 1位＋4位 / 2位＋3位
+  next.teams=[
+    ranked[0],
+    ranked[3],
+    ranked[1],
+    ranked[2]
+  ];
+}
+
+function renderHoles(){
+  $("holes").innerHTML="";
+  state.holes.forEach((h,i)=>{
+    const b=document.createElement("button");
+    b.innerHTML=`<span class="hole-seq">${i+1}</span><span class="hole-actual">${displayHoleNumber(i)}H</span>`;
+    if(i===current)b.classList.add("active"); if(h.saved)b.classList.add("done");
+    b.onclick=()=>{saveCurrent(false);current=i;renderAll()};
+    $("holes").appendChild(b);
+    if(i===current){setTimeout(()=>b.scrollIntoView({behavior:"smooth",inline:"center",block:"nearest"}),0);}
+  });
+}
+function fillSelect(sel,selected){
+  sel.innerHTML="";
+  state.players.forEach((p,i)=>{const o=new Option(p,i); if(i===selected)o.selected=true;sel.add(o)});
+}
+function fillScoreSelect(sel,selected){
+  sel.innerHTML="";
+  for(let i=1;i<=19;i++){
+    const o=new Option(i,i);
+    if(i===Number(selected))o.selected=true;
+    sel.add(o);
+  }
+}
+function loadCurrent(){
+  const h=state.holes[current];
+  $("holeNo").value=`${displayHoleNumber(current)}H`;$("par").value=h.par;
+  fillSelect($("a1"),h.teams[0]);fillSelect($("a2"),h.teams[1]);fillSelect($("b1"),h.teams[2]);fillSelect($("b2"),h.teams[3]);
+  ["s1","s2","s3","s4"].forEach((id,i)=>fillScoreSelect($(id),h.scores[i]||h.par));
+  $("nearPin").value=h.options.nearPin||"";$("dragon").value=h.options.dragon||"";$("sand").value=h.options.sand||"";$("rod").value=h.options.rod||"";$("naki").value=String(h.naki||1);
+  $("holeBadge").textContent=`${displayHoleNumber(current)}H`;
+  updateCalc();
+}
+function saveCurrent(mark=true){
+  const h=state.holes[current];
+  h.par=Number($("par").value);
+  h.teams=[$("a1"),$("a2"),$("b1"),$("b2")].map(x=>Number(x.value));
+  h.scores=[$("s1"),$("s2"),$("s3"),$("s4")].map(x=>Number(x.value||0));
+  h.options={nearPin:$("nearPin").value,dragon:$("dragon").value,sand:$("sand").value,rod:$("rod").value};
+  h.naki=Number($("naki").value||1);
+  if(new Set(h.teams).size!==4){alert("4人が重複しないように選んでください");return false}
+  h.saved=mark||h.saved; persist(); return true;
+}
+function updateCalc(){
+  const currentNaki=Number($("naki").value);
+  const nakiMult=[1,2,4,6,8].includes(currentNaki)?currentNaki:1;
+  const h={
+    par:Number($("par").value),
+    scores:[$("s1"),$("s2"),$("s3"),$("s4")].map(x=>Number(x.value||0)),
+    options:{
+      nearPin:String($("nearPin").value||""),
+      dragon:String($("dragon").value||""),
+      sand:String($("sand").value||""),
+      rod:String($("rod").value||"")
+    },
+    naki:nakiMult
+  };
+
+  const b=calcBase(h);
+  const carry=carryMultiplier(current);
+  const opt=optionDiff(h);
+  const multiplied=b.rawDiff*carry*nakiMult;
+  let total=multiplied+opt;
+  total=Math.max(-state.settings.cap,Math.min(state.settings.cap,total));
+  const money=total*state.settings.rate;
+
+  $("resultText").textContent=`A ${b.aFinal} ｜ B ${b.bFinal}`;
+  const winner=total>0?"Aチーム勝ち":total<0?"Bチーム勝ち":"引き分け";
+  $("ruleText").textContent=
+    `${winner}・切上げ ${b.baseDiff>0?"+":""}${b.baseDiff}点`+
+    ` ×スコア${b.scoreMult}`+
+    ` ×持越し${carry}`+
+    ` ×鳴き${nakiMult}`+
+    ` ＝${multiplied>0?"+":""}${multiplied}点`+
+    `・オプション ${opt>0?"+":""}${opt}点`;
+
+  $("moneyText").textContent=`合計 ${total>0?"+":""}${total}点 ／ ${money>0?"+":""}${money.toLocaleString()}円`;
+  $("moneyText").className="money "+(money>0?"pos":money<0?"neg":"");
+}
+function renderSummary(){
+  const points=[0,0,0,0];
+  state.holes.forEach((h,idx)=>{if(!h.saved)return;
+    const r=calc(h,idx); const [a,b,c,d]=h.teams;
+    points[a]+=r.diff;points[b]+=r.diff;points[c]-=r.diff;points[d]-=r.diff;
+  });
+  $("summaryList").innerHTML=state.players.map((p,i)=>{
+    const money=points[i]*state.settings.rate;
+    return `<div class="summary-row"><b>${p}</b><span>${points[i]>0?"+":""}${points[i]}</span><b class="${money>0?"pos":money<0?"neg":""}">${money>0?"+":""}${money.toLocaleString()}円</b></div>`;
+  }).join("");
+  const creditors=[],debtors=[];
+  points.forEach((pt,i)=>{const m=pt*state.settings.rate;if(m>0)creditors.push([i,m]);if(m<0)debtors.push([i,-m])});
+  let lines=[];
+  for(const d of debtors){for(const c of creditors){if(d[1]&&c[1]){const pay=Math.min(d[1],c[1]);lines.push(`${state.players[d[0]]} → ${state.players[c[0]]}：${pay.toLocaleString()}円`);d[1]-=pay;c[1]-=pay}}}
+  $("payments").innerHTML=lines.length?lines.map(x=>`<div class="payline">${x}</div>`).join(""):'<div class="tiny">まだ精算データがありません。</div>';
+  return {points,lines};
+}
+
+function createHistoryRecord(){
+  const summary=renderSummary();
+  return {
+    id:Date.now(),
+    savedAt:new Date().toISOString(),
+    courseName:(state.settings.courseName||"名称未設定").trim()||"名称未設定",
+    players:[...state.players],
+    points:[...summary.points],
+    rate:Number(state.settings.rate),
+    savedHoles:state.holes.filter(h=>h.saved).length
+  };
+}
+function saveRoundHistory(showMessage=true){
+  if(state.holes.filter(h=>h.saved).length===0){if(showMessage)alert("保存済みのホールがありません");return false}
+  history.unshift(createHistoryRecord());
+  persistHistory();renderHistory();
+  if(showMessage)alert("ラウンド履歴を保存しました");
+  return true;
+}
+function formatHistoryDate(value){
+  const d=new Date(value);
+  return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+}
+function renderHistory(){
+  const list=$("historyList");if(!list)return;
+  if(!history.length){list.innerHTML='<div class="card empty-history">まだ履歴はありません。<br>精算画面から保存できます。</div>';return}
+  list.innerHTML=history.map(rec=>{
+    const rows=rec.players.map((p,i)=>{
+      const money=Number(rec.points[i]||0)*Number(rec.rate||0);
+      return `<div class="history-player"><span>${p}</span><b class="${money>0?"pos":money<0?"neg":""}">${money>0?"+":""}${money.toLocaleString()}円</b></div>`;
+    }).join("");
+    return `<div class="history-card"><div class="history-title">${rec.courseName}</div><div class="history-meta">${formatHistoryDate(rec.savedAt)}・${rec.savedHoles||0}ホール・1点${Number(rec.rate||0).toLocaleString()}円</div>${rows}<div class="history-actions"><button class="ghost" onclick="shareHistory(${rec.id})">共有</button><button class="danger" onclick="deleteHistory(${rec.id})">削除</button></div></div>`;
+  }).join("");
+}
+window.deleteHistory=function(id){
+  if(!confirm("この履歴を削除しますか？"))return;
+  history=history.filter(x=>x.id!==id);persistHistory();renderHistory();
+};
+window.shareHistory=async function(id){
+  const rec=history.find(x=>x.id===id);if(!rec)return;
+  const lines=rec.players.map((p,i)=>{const money=Number(rec.points[i]||0)*Number(rec.rate||0);return `${p}: ${money>0?"+":""}${money.toLocaleString()}円`;});
+  const text=[rec.courseName,formatHistoryDate(rec.savedAt),...lines].join("\n");
+  try{if(navigator.share)await navigator.share({title:"ゴルフ・ラスベガス履歴",text});else{await navigator.clipboard.writeText(text);alert("履歴をコピーしました")}}catch(e){}
+};
+function renderSettings(){
+  if($("courseName"))$("courseName").value=state.settings.courseName||"";
+  state.players.forEach((p,i)=>$("p"+(i+1)).value=p);
+  Object.entries(state.settings).forEach(([k,v])=>{if($(k))$(k).type==="checkbox"?$(k).checked=v:$(k).value=v});
+  if($("startSide"))$("startSide").value=state.settings.startSide||"OUT";
+}
+function renderAll(){renderHoles();loadCurrent();renderSummary();renderSettings();renderHistory();persist()}
+function showView(v){
+  ["play","summary","history","settings"].forEach(x=>$(x+"View").classList.toggle("hidden",x!==v));
+  document.querySelectorAll(".nav button").forEach(b=>{b.className=b.dataset.view===v?"primary":"secondary"});
+  if(v==="summary")renderSummary(); if(v==="history")renderHistory(); if(v==="settings")renderSettings();
+}
+document.querySelectorAll("input,select").forEach(el=>el.addEventListener("input",()=>{if(!["p1","p2","p3","p4","rate","cap","birdie","eagle","albatross","reverse"].includes(el.id))updateCalc()}));
+["nearPin","dragon","sand","rod"].forEach(id=>{
+  $(id).addEventListener("change",()=>{saveCurrent(false);updateCalc();});
+});
+$("naki").addEventListener("change",()=>{
+  const selected=Number($("naki").value);
+  state.holes[current].naki=[1,2,4,6,8].includes(selected)?selected:1;
+  persist();
+  updateCalc();
+});
+$("par").addEventListener("change",()=>{
+  const h=state.holes[current];
+  if(!h.saved){
+    ["s1","s2","s3","s4"].forEach(id=>$(id).value=$("par").value);
+    updateCalc();
+  }
+});
+$("nextBtn").onclick=()=>{if(!saveCurrent(true))return;applyRankTeamsToNextHole(current);if(current<17)current++;renderAll()};
+$("prevBtn").onclick=()=>{saveCurrent(false);if(current>0)current--;renderAll()};
+$("saveSettings").onclick=()=>{
+  state.players=[1,2,3,4].map(i=>$("p"+i).value.trim()||`プレイヤー${i}`);
+  state.settings={reverse:$("reverse").checked,rate:Number($("rate").value||50),cap:Number($("cap").value||999),birdie:Number($("birdie").value||1),eagle:Number($("eagle").value||2),albatross:Number($("albatross").value||4),round10:$("round10").checked,autoRankTeams:$("autoRankTeams").checked,tieCarry:$("tieCarry").checked,startSide:$("startSide").value,courseName:$("courseName").value.trim()};
+  persist();renderAll();showView("play");alert("設定を保存しました");
+};
+$("resetBtn").onclick=()=>{
+  const savedCount=state.holes.filter(h=>h.saved).length;
+  if(!confirm("新しいラウンドを開始しますか？現在の入力内容はリセットされます。"))return;
+  if(savedCount>0 && confirm("現在のラウンドを履歴に保存しますか？"))saveRoundHistory(false);
+  const keepSettings=JSON.parse(JSON.stringify(state.settings));
+  const keepPlayers=[...state.players];
+  state=JSON.parse(JSON.stringify(defaults));
+  state.settings=Object.assign({},state.settings,keepSettings);
+  state.players=keepPlayers;
+  current=0;persist();renderAll();showView("play");alert("新しいラウンドを開始しました");
+};
+$("saveHistoryBtn").onclick=()=>saveRoundHistory(true);
+$("clearHistoryBtn").onclick=()=>{if(history.length&&confirm("すべてのラウンド履歴を削除しますか？")){history=[];persistHistory();renderHistory();}};
+$("shareBtn").onclick=async()=>{
+  const {points,lines}=renderSummary();
+  const text=["ゴルフ・ラスベガス結果",...state.players.map((p,i)=>`${p}: ${(points[i]*state.settings.rate).toLocaleString()}円`),"",...lines].join("\n");
+  try{if(navigator.share)await navigator.share({title:"ラスベガス結果",text});else{await navigator.clipboard.writeText(text);alert("結果をコピーしました")}}catch(e){}
+};
+document.querySelectorAll(".nav button").forEach(b=>b.onclick=()=>showView(b.dataset.view));
+
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js");
+renderAll();
+</script>
+</body>
+</html>
