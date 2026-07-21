@@ -114,6 +114,11 @@
     .history-actions{display:flex;gap:8px;margin-top:10px}
     .history-actions button{flex:1;min-height:42px}
     .empty-history{text-align:center;padding:30px 12px;color:var(--muted)}
+    .history-detail{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+    .history-hole{border:1px solid var(--line);border-radius:14px;padding:10px;margin:9px 0;background:#f8faf9}
+    .history-hole-head{display:flex;justify-content:space-between;gap:8px;font-weight:900;margin-bottom:7px}
+    .history-hole-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px 10px;font-size:12px}
+    .history-option{margin-top:7px;font-size:12px;color:var(--muted)}
 
 </style>
 </head>
@@ -549,47 +554,69 @@ function renderSummary(){
   return {points,lines};
 }
 
+function escapeHtml(value){
+  return String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+}
+function historyHoleSnapshot(h,index){
+  const r=calc(h,index);
+  const optionNames={nearPin:"ニアピン",dragon:"ドラゴン",sand:"砂イチ",rod:"竿"};
+  const options=Object.entries(h.options||{}).filter(([,v])=>v).map(([k,v])=>`${optionNames[k]||k}:${v}チーム`);
+  return {
+    sequence:index+1,
+    displayHole:displayHoleNumber(index),
+    par:Number(h.par),
+    teams:[...h.teams],
+    teamNames:{A:[state.players[h.teams[0]],state.players[h.teams[1]]],B:[state.players[h.teams[2]],state.players[h.teams[3]]]},
+    scores:[...h.scores],
+    options:{...(h.options||{})},
+    optionLabels:options,
+    aFinal:r.aFinal,bFinal:r.bFinal,baseDiff:r.baseDiff,scoreMult:r.scoreMult,
+    carryMult:r.carryMult,nakiMult:r.nakiMult,optionDiff:r.optionDiff,diff:r.diff,money:r.money
+  };
+}
 function createHistoryRecord(){
   const summary=renderSummary();
   return {
-    id:Date.now(),
-    savedAt:new Date().toISOString(),
+    id:Date.now(),savedAt:new Date().toISOString(),
     courseName:(state.settings.courseName||"名称未設定").trim()||"名称未設定",
-    players:[...state.players],
-    points:[...summary.points],
-    rate:Number(state.settings.rate),
+    players:[...state.players],points:[...summary.points],rate:Number(state.settings.rate),
+    settings:JSON.parse(JSON.stringify(state.settings)),
+    holes:state.holes.map((h,i)=>h.saved?historyHoleSnapshot(h,i):null).filter(Boolean),
     savedHoles:state.holes.filter(h=>h.saved).length
   };
 }
 function saveRoundHistory(showMessage=true){
   if(state.holes.filter(h=>h.saved).length===0){if(showMessage)alert("保存済みのホールがありません");return false}
-  history.unshift(createHistoryRecord());
-  persistHistory();renderHistory();
-  if(showMessage)alert("ラウンド履歴を保存しました");
-  return true;
+  history.unshift(createHistoryRecord());persistHistory();renderHistory();
+  if(showMessage)alert("スコア・点差・倍率・オプションを含めて履歴に保存しました");return true;
 }
-function formatHistoryDate(value){
-  const d=new Date(value);
-  return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+function formatHistoryDate(value){const d=new Date(value);return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;}
+function renderHistoryHole(h,rec){
+  const scoreRows=h.teamNames?`${escapeHtml(h.teamNames.A[0])} ${h.scores[0]} / ${escapeHtml(h.teamNames.A[1])} ${h.scores[1]}<br>${escapeHtml(h.teamNames.B[0])} ${h.scores[2]} / ${escapeHtml(h.teamNames.B[1])} ${h.scores[3]}`:"旧形式の履歴";
+  const opts=(h.optionLabels&&h.optionLabels.length)?h.optionLabels.join("・"):"なし";
+  return `<div class="history-hole"><div class="history-hole-head"><span>${h.displayHole}H（PAR${h.par}）</span><span class="${h.diff>0?'pos':h.diff<0?'neg':''}">${h.diff>0?'+':''}${h.diff}点 / ${h.money>0?'+':''}${Number(h.money).toLocaleString()}円</span></div><div class="history-hole-grid"><div><b>チーム・スコア</b><br>${scoreRows}</div><div><b>計算</b><br>A ${h.aFinal}｜B ${h.bFinal}<br>点差 ${h.baseDiff>0?'+':''}${h.baseDiff} ×スコア${h.scoreMult} ×持越し${h.carryMult} ×鳴き${h.nakiMult}</div></div><div class="history-option">オプション：${escapeHtml(opts)}（${h.optionDiff>0?'+':''}${h.optionDiff}点）</div></div>`;
 }
 function renderHistory(){
   const list=$("historyList");if(!list)return;
   if(!history.length){list.innerHTML='<div class="card empty-history">まだ履歴はありません。<br>精算画面から保存できます。</div>';return}
   list.innerHTML=history.map(rec=>{
-    const rows=rec.players.map((p,i)=>{
-      const money=Number(rec.points[i]||0)*Number(rec.rate||0);
-      return `<div class="history-player"><span>${p}</span><b class="${money>0?"pos":money<0?"neg":""}">${money>0?"+":""}${money.toLocaleString()}円</b></div>`;
-    }).join("");
-    return `<div class="history-card"><div class="history-title">${rec.courseName}</div><div class="history-meta">${formatHistoryDate(rec.savedAt)}・${rec.savedHoles||0}ホール・1点${Number(rec.rate||0).toLocaleString()}円</div>${rows}<div class="history-actions"><button class="ghost" onclick="shareHistory(${rec.id})">共有</button><button class="danger" onclick="deleteHistory(${rec.id})">削除</button></div></div>`;
+    const rows=(rec.players||[]).map((p,i)=>{const money=Number(rec.points?.[i]||0)*Number(rec.rate||0);return `<div class="history-player"><span>${escapeHtml(p)}</span><b class="${money>0?'pos':money<0?'neg':''}">${money>0?'+':''}${money.toLocaleString()}円</b></div>`;}).join("");
+    const detail=(rec.holes||[]).map(h=>renderHistoryHole(h,rec)).join("")||'<div class="tiny">この履歴は旧バージョンで保存されたため、ホール詳細はありません。</div>';
+    return `<div class="history-card"><div class="history-title">${escapeHtml(rec.courseName)}</div><div class="history-meta">${formatHistoryDate(rec.savedAt)}・${rec.savedHoles||0}ホール・1点${Number(rec.rate||0).toLocaleString()}円</div>${rows}<div class="history-actions"><button class="ghost" onclick="toggleHistoryDetail(${rec.id})">詳細を見る</button><button class="ghost" onclick="exportHistoryCsv(${rec.id})">CSV</button><button class="danger" onclick="deleteHistory(${rec.id})">削除</button></div><div id="history-detail-${rec.id}" class="history-detail hidden">${detail}</div></div>`;
   }).join("");
 }
-window.deleteHistory=function(id){
-  if(!confirm("この履歴を削除しますか？"))return;
-  history=history.filter(x=>x.id!==id);persistHistory();renderHistory();
+window.toggleHistoryDetail=function(id){const el=$("history-detail-"+id);if(el)el.classList.toggle("hidden");};
+window.deleteHistory=function(id){if(!confirm("この履歴を削除しますか？"))return;history=history.filter(x=>x.id!==id);persistHistory();renderHistory();};
+window.exportHistoryCsv=function(id){
+  const rec=history.find(x=>x.id===id);if(!rec)return;
+  const header=["ホール","PAR","Aチーム","Bチーム","スコア1","スコア2","スコア3","スコア4","A数字","B数字","切上げ点差","スコア倍率","持越し倍率","鳴き倍率","オプション","オプション点","最終点","金額"];
+  const rows=(rec.holes||[]).map(h=>[h.displayHole,h.par,(h.teamNames?.A||[]).join("+"),(h.teamNames?.B||[]).join("+"),...(h.scores||[]),h.aFinal,h.bFinal,h.baseDiff,h.scoreMult,h.carryMult,h.nakiMult,(h.optionLabels||[]).join(" / "),h.optionDiff,h.diff,h.money]);
+  const csv='\ufeff'+[header,...rows].map(row=>row.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`${rec.courseName||'golf'}_${String(rec.savedAt).slice(0,10)}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 };
 window.shareHistory=async function(id){
   const rec=history.find(x=>x.id===id);if(!rec)return;
-  const lines=rec.players.map((p,i)=>{const money=Number(rec.points[i]||0)*Number(rec.rate||0);return `${p}: ${money>0?"+":""}${money.toLocaleString()}円`;});
+  const lines=(rec.players||[]).map((p,i)=>{const money=Number(rec.points?.[i]||0)*Number(rec.rate||0);return `${p}: ${money>0?'+':''}${money.toLocaleString()}円`;});
   const text=[rec.courseName,formatHistoryDate(rec.savedAt),...lines].join("\n");
   try{if(navigator.share)await navigator.share({title:"ゴルフ・ラスベガス履歴",text});else{await navigator.clipboard.writeText(text);alert("履歴をコピーしました")}}catch(e){}
 };
