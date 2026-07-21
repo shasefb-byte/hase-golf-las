@@ -83,9 +83,9 @@
     }
 
 
-    .splash{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#0b2e23 url("splash-bg.jpg") center center/cover no-repeat;color:white;transition:opacity .45s ease,visibility .45s ease;overflow:hidden}
+    .splash{position:fixed;inset:0;z-index:9999;background:#071d18 url("splash-bg.jpg?v=26-splash-final") center center/cover no-repeat;transition:opacity .55s ease,visibility .55s ease;overflow:hidden}
     .splash.hide{opacity:0;visibility:hidden;pointer-events:none}
-    .splash-inner{text-align:center;padding:28px;width:100%;position:relative;top:250px;text-shadow:0 3px 14px rgba(0,0,0,.75)}
+    .splash-inner{display:none}
     .splash-icon{font-size:76px;line-height:1;margin-bottom:18px;animation:splashFloat 1.3s ease-in-out infinite alternate}
     .splash-title{font-size:34px;font-weight:900;letter-spacing:.03em}
     .splash-author{margin-top:10px;font-size:18px;font-weight:700;opacity:.9}
@@ -300,7 +300,7 @@
 <script>
 const $ = id => document.getElementById(id);
 const splash=document.getElementById("splash");
-const splashDelay=window.matchMedia("(prefers-reduced-motion: reduce)").matches?150:1400;
+const splashDelay=window.matchMedia("(prefers-reduced-motion: reduce)").matches?250:1900;
 window.setTimeout(()=>splash&&splash.classList.add("hide"),splashDelay);
 
 const defaults = {
